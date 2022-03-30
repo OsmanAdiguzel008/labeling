@@ -1,1 +1,13 @@
 
+The method used for better learnings by ML systems.
+
+Price data is taken from Datastream and cleared missing datas with different method. The input price is prepared cleared daily price data.
+
+The period of analysis is daily. The period may enlarge with your preferences after a argument changes from triple_barrier_method.py > triple_barrier_method() > relativedelta() > days arguments to weeks, monthts etc.
+
+First graphics is shows all price data with TBM analysis, while other one shows last 100 price data.
+
+argument "barrier" is about activeness of the TBM lines. 
+  > [1,1,1] is all line active for signal.
+  > Mean of the each number is [profit taking, stoploss, unwillingness to hold on hand anymore] 
+  > to become one of these inactive you should chage the number 1 to 0, like [1,0,1] -> without stoploss
