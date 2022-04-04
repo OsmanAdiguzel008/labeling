@@ -77,7 +77,11 @@ def triple_barrier_method(close, event_dates, barriers = [1,1,1],
             elif (line_crossed == False) & (dfo_.index[i] - relativedelta(
                                         days=hlen) == dfo_.iloc[i]["event"]):
                 if barriers[2] == 1:
-                    dfo_.at[dfo_.index[i],"output"] = 1
+                    row = dfo_.iloc[i]
+                    if row.close >= (row.upper + row.lower)/2:
+                        dfo_.at[dfo_.index[i],"output"] = 1
+                    else:
+                        dfo_.at[dfo_.index[i],"output"] = -1
                     line_crossed = True
                     sign_at = dfo_.iloc[i]["event"]
             else:
@@ -131,4 +135,5 @@ if __name__ == "__main__":
     close = df.basic_materials
     event_dates = getTEvents(close.pct_change().dropna(),0.1)
     output = triple_barrier_method(close, event_dates, 
-                                   hlen=25, plotting=True, record=False)
+                                   hlen=15, plotting=True, record=False)
+    
