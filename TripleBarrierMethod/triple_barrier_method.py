@@ -45,13 +45,13 @@ def define_upandlow(close, df_):
     return upper, lower
     
 
-def triple_barrier_method(close, events, upper, lower, barriers = [1,1,1],
+def triple_barrier_method(close, event_dates, barriers = [1,1,1],
                           hlen=25, plotting=False, record=False):
     dfo_ = close.to_frame(name="close")
     hlenght = relativedelta(days=hlen)
-    dfo_["event"] = events
-    dfo_["upper"] = upper
-    dfo_["lower"] = lower
+    events_ = event_dates_to_frame(close,event_dates)
+    dfo_["event"] = events_
+    dfo_["upper"], dfo_["lower"] = define_upandlow(close, events_)
     dfg_ = dfo_.copy()
     dfo_["upper"].ffill(limit=hlen,inplace=True)
     dfo_["lower"].ffill(limit=hlen,inplace=True)
@@ -64,29 +64,39 @@ def triple_barrier_method(close, events, upper, lower, barriers = [1,1,1],
             line_crossed = False
             if (dfo_.iloc[i-1]["close"] < dfo_.iloc[i-1]["upper"]) & (
                                     dfo_.iloc[i]["close"] > dfo_.iloc[i]["upper"]):
-                if barrier[0] == 1:
-                dfo_.at[dfo_.index[i],"output"] = 1
-                line_crossed = True
+                if barriers[0] == 1:
+                    dfo_.at[dfo_.index[i],"output"] = 1
+                    line_crossed = True
                 sign_at = dfo_.iloc[i]["event"]
             elif (dfo_.iloc[i-1]["close"] > dfo_.iloc[i-1]["lower"]) & (
                                     dfo_.iloc[i]["close"] < dfo_.iloc[i]["lower"]):
-                if barrier[1] == 1:
+                if barriers[1] == 1:
                     dfo_.at[dfo_.index[i],"output"] = -1
                     line_crossed = True
                     sign_at = dfo_.iloc[i]["event"]
             elif (line_crossed == False) & (dfo_.index[i] - relativedelta(
                                         days=hlen) == dfo_.iloc[i]["event"]):
-                if barrier[2] == 1:
+                if barriers[2] == 1:
                     dfo_.at[dfo_.index[i],"output"] = 1
                     line_crossed = True
                     sign_at = dfo_.iloc[i]["event"]
             else:
                 if dfo_.iloc[i]["upper"] > 0:
                     dfo_.at[dfo_.index[i],"output"] = 0
-                    
+    
                     
     dfg_ = dfg_.merge(dfo_["output"],right_index=True, left_index=True)
     dfg_ = dfg_.iloc[-100:]
+    
+    # the part just for clear visual
+    out = dfg_.output.replace(0,np.nan).dropna()
+    evt = dfg_.event.ffill().dropna()
+    ins = pd.merge(out,evt,left_index=True,right_index=True)
+    for i in evt.unique():
+        if i not in ins.event.to_list():
+            print(i)
+            dfg_ = dfg_[dfg_.event != i]
+    #-------------------------------
     if plotting == True:
         mpl.plot(dfg_.close, color="black")
         for i,r in dfg_.dropna().iterrows():
@@ -120,9 +130,5 @@ if __name__ == "__main__":
     df.index = pd.to_datetime(df.index)
     close = df.basic_materials
     event_dates = getTEvents(close.pct_change().dropna(),0.1)
-    events_ = event_dates_to_frame(close,event_dates)
-    upper,lower = define_upandlow(close, events_)
-    events_ = event_dates_to_frame(close,event_dates)
-    output = triple_barrier_method(close, events_, upper, lower, 
+    output = triple_barrier_method(close, event_dates, 
                                    hlen=25, plotting=True, record=False)
-    
